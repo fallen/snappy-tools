@@ -1,0 +1,9 @@
+ServerAliveInterval 15
+
+Host gerrit
+	User y.sionneau
+	Port 29418
+
+Host gerrit.parrot.biz
+	User y.sionneau
+	Port 29418
