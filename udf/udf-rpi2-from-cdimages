@@ -1,0 +1,7 @@
+sudo ./ubuntu-device-flash -vvv core rolling --channel edge \
+	--os xenial-preinstalled-core-armhf.os.snap \
+	--kernel xenial-preinstalled-core-armhf.raspi2.kernel.snap \
+	--gadget canonical-pi2 -o test.img
+
+
+
