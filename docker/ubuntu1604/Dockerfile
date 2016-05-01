@@ -20,6 +20,7 @@ RUN apt-get -y install vim bsdmainutils pkg-config
 RUN apt-get -y install curl git python
 RUN apt-get -y install python3-pyelftools
 RUN apt-get -y install autoconf automake autopoint autotools-dev cmake cmake-data libarchive13 libcurl3 libjsoncpp1 libsigsegv2 libtool m4
+RUN apt-get -y install wget
 
 # ubuntu-device-flash deps
 RUN apt-get -y install parted kpartx dosfstools
