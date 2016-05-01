@@ -1,2 +1,9 @@
-sudo ./ubuntu-device-flash -vvv core rolling --channel edge --os ubuntu-core --kernel canonical-pi2-linux  --gadget canonical-pi2 -o test.img
+sudo ubuntu-device-flash \
+	-vvv \
+	core 16 \
+	--channel=edge \
+	--os=ubuntu-core \
+	--kernel=canonical-pi2-linux  \
+	--gadget=canonical-pi2 \
+	-o test.img
 
