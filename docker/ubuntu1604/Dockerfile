@@ -33,10 +33,6 @@ RUN apt-get -y install parted kpartx dosfstools
 # affecting the build process
 RUN ln -s /bin/true /usr/local/bin/udevadm
 
-# Patch ubuntu-device-flash to generate all-snaps images.
-RUN wget https://people.canonical.com/~mvo/all-snaps/ubuntu-device-flash && \
-  chmod +x ubuntu-device-flash && \
-  mv ubuntu-device-flash /usr/bin/ubuntu-device-flash
 
 RUN echo "pboettch ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers
 
@@ -47,5 +43,10 @@ RUN mkdir ~/bin; curl https://storage.googleapis.com/git-repo-downloads/repo > ~
 RUN git config --global user.name "Patrick Boettcher" && git config --global user.email "patrick.boettcher@posteo.de"
 #RUN mkdir $HOME/dev && cd ~/dev && PATH=$HOME/bin:$PATH repo init -u ssh://gerrit.parrot.biz/drones/dragonfly/manifest.git && PATH=$HOME/bin:$PATH repo sync
 
+# Patch ubuntu-device-flash to generate all-snaps images.
+#RUN wget https://people.canonical.com/~ogra/snappy/all-snaps/ubuntu-device-flash && \
+RUN wget https://people.canonical.com/~mvo/all-snaps/ubuntu-device-flash && \
+  chmod +x ubuntu-device-flash && \
+  mv ubuntu-device-flash /usr/bin/ubuntu-device-flash
 
 CMD /bin/bash
