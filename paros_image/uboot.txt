@@ -1,0 +1,60 @@
+arch=arm
+baudrate=115200
+board=paros
+board_name=paros
+boot_a_script=load ${devtype} ${devnum}:${bootpart} ${scriptaddr}
+${prefix}${script}; source ${scriptaddr}
+boot_extlinux=sysboot ${devtype} ${devnum}:${bootpart} any ${scriptaddr}
+${prefix}extlinux/extlinux.conf
+boot_net_usb_start=usb start
+boot_prefixes=/ /boot/
+boot_script_dhcp=boot.scr.uimg
+boot_scripts=boot.scr.uimg boot.scr
+boot_targets=mmc1 mmc0 usb0 pxe dhcp
+bootcmd=run distro_bootcmd
+bootcmd_dhcp=run boot_net_usb_start; if dhcp ${scriptaddr}
+${boot_script_dhcp}; then source ${scriptaddr}; fi
+bootcmd_mmc0=setenv devnum 0; run mmc_boot
+bootcmd_mmc1=setenv devnum 1; run mmc_boot
+bootcmd_pxe=run boot_net_usb_start; dhcp; if pxe get; then pxe boot; fi
+bootcmd_usb0=setenv devnum 0; run usb_boot
+bootdelay=2
+cpu=armv8
+dfu_alt_info=kernel ram 0x80080000;dtb ram 0x83000000;initramfs ram
+0x84000000
+dfu_boot=dfu 0 ram 0; booti 0x80080000 - 0x83000000
+distro_bootcmd=for target in ${boot_targets}; do run bootcmd_${target}; done
+fdt_addr_r=0x82000000
+fdt_copy_node_names=/memory-controller@7001b000
+fdt_copy_src_addr=0x83080000
+fdt_high=ffffffffffffffff
+initrd_high=ffffffffffffffff
+kernel_addr_r=0x80080000
+loadaddr=0x80080000
+lp0_vec=0x1000@0xff2bf000
+mmc_boot=if mmc dev ${devnum}; then setenv devtype mmc; run
+scan_dev_for_boot_part; fi
+nvdumper_reserved=0xff23f000
+pxefile_addr_r=0x90100000
+ramdisk_addr_r=0x83100000
+revision=hw00
+scan_dev_for_boot=echo Scanning ${devtype} ${devnum}:${bootpart}...; for
+prefix in ${boot_prefixes}; do run scan_dev_for_extlinux; run
+scan_dev_for_scripts; done
+scan_dev_for_boot_part=part list ${devtype} ${devnum} -bootable
+devplist; env exists devplist || setenv devplist 1; for bootpart in
+${devplist}; do if fstype ${devtype} ${devnum}:${be
+scan_dev_for_extlinux=if test -e ${devtype} ${devnum}:${bootpart}
+${prefix}extlinux/extlinux.conf; then echo Found
+${prefix}extlinux/extlinux.conf; run boot_extlinux; echo SCRIPT FAIL
+scan_dev_for_scripts=for script in ${boot_scripts}; do if test -e
+${devtype} ${devnum}:${bootpart} ${prefix}${script}; then echo Found
+U-Boot script ${prefix}${script}; run boot_a_sce
+scriptaddr=0x90000000
+soc=tegra210
+stderr=serial
+stdin=serial
+stdout=serial
+usb_boot=usb start; if usb dev ${devnum}; then setenv devtype usb; run
+scan_dev_for_boot_part; fi
+vendor=parrot

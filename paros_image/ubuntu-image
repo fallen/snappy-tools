@@ -1,0 +1,231 @@
+#!/bin/sh
+
+version="0.11"
+
+show_device_names() {
+    echo "Devices supported by Canonical (official)"
+    echo " pc:      Modern Intel/AMD Computer (64 bit)"
+    echo " i386:    Legacy Intel/AMD Computer (32 bit)"
+    echo " pi2:     Raspberry Pi 2"
+    echo " dragon:  410c DragonBoard"
+    echo
+    echo "Community devices"
+    echo " bbb:     BeagleBone Black"
+}
+
+# Handle command line arguments
+
+while [ -n "$1" ]; do
+    case "$1" in
+        --help|-h)
+            echo "Usage: ubuntu-image [--[no-]developer-mode] [device-name|?]"
+            exit 0
+            ;;
+        --version)
+            echo "ubuntu-image, version $version"
+            exit 0
+            ;;
+        --developer-mode)
+            image_kind=devel
+            shift
+            ;;
+        --no-developer-mode)
+            image_kind=vanilla
+            shift
+            ;;
+        '?')
+            echo "Recognized device names"
+            echo
+            show_device_names
+            exit
+            ;;
+        *)
+            # Perhaps it is a device name?
+            case $1 in
+                pc|i386|pi2|dragon|bbb)
+                    device="$1"
+                    shift
+                    ;;
+                *)
+                    echo "Unrecognized argument: $1" 1>&2
+                    exit 1
+                    ;;
+            esac
+            ;;
+    esac
+done
+
+# Interactively ask about the device if necessary.
+
+while [ -z "$device" ]; do
+    echo "Which device do you have?"
+    echo
+    show_device_names
+    echo
+    echo -n "device> "
+    read device
+    case "$device" in
+        pc|i386|pi2|dragon|bbb)
+            ;;
+        *)
+            echo "Unrecognized device name: $device"
+            device=""
+            ;;
+    esac
+done
+
+# Interactively ask if developer mode should be enabled.
+
+while [ -z "$image_kind" ]; do
+    echo "What kind of image do you want to build?"
+    echo
+    echo "devel:    Developer image that contains your public SSH key"
+    echo "vanilla:  Pristine image intended for sharing or installation"
+    echo
+    echo -n "image kind> "
+    read image_kind
+    case "$image_kind" in
+        devel)
+            image_kind=devel
+            ;;
+        vanilla)
+            image_kind=vanilla
+            ;;
+        *)
+            echo "Unrecognized image kind: $image_kind"
+            image_kind=
+            ;;
+    esac
+done
+
+# Re-affirm the user as to which device is selected
+
+echo "Selected device: $device"
+
+# Pick the right values for ubuntu-device-flash
+
+channel=edge
+os=ubuntu-core
+gadget_hash=
+gadget_url=
+kernel_hash=
+kernel_url=
+os_hash=
+os_url=
+udf_hash=6d04b0d39678538b50eeea2b41da4ea73fd8ab6f5ca0ad8f12ee45a40b41448fc274ce4ad7906bd929c2df6910cb14b688a8e262598915a6c30a2411d07ff900
+udf_url=https://people.canonical.com/~mvo/all-snaps/ubuntu-device-flash
+case $device in
+    pc)
+        kernel=canonical-pc-linux
+        gadget=canonical-pc
+        ;;
+    i386)
+        kernel=canonical-pc-linux
+        gadget=canonical-i386
+        ;;
+    pi2)
+        kernel=canonical-pi2-linux
+        gadget=canonical-pi2
+        ;;
+    bbb)
+        kernel=linux-armhf
+        gadget=beagleblack
+        ;;
+    dragon)
+        kernel=canonical-snapdragon-linux
+        gadget=canonical-dragon
+        ;;
+    *)
+        echo "BUG: no information how to build an image for device: $device"
+        exit 2
+        ;;
+esac
+
+cache_dir="${XDG_CACHE_HOME:-$HOME/.cache}/ubuntu-image"
+
+download() {
+    blob_url="$1"
+    blob_hash="$2"
+    msg="$3"
+    if [ -f "$cache_dir/blob.$blob_hash" ]; then
+        cached_blob_hash=$(sha512sum < "$cache_dir/blob.$blob_hash" | cut -f 1 -d ' ')
+        if [ "$cached_blob_hash" != "$blob_hash" ]; then
+            echo "Removing corrupted copy of $(basename "$blob_url")"
+            rm -f "$cache_dir/blob.$blob_hash"
+        else
+            return
+        fi
+    fi
+    if [ -z "$msg" ]; then
+        echo "Downloading $blob_url..."
+    else
+        echo "$msg"
+    fi
+    blob_download_fname=$(tempfile --prefix=blob-)
+    trap "rm -f $blob_download_fname" EXIT
+    if ! wget --quiet --user-agent="ubuntu-image/$version" --output-document="$blob_download_fname" "$blob_url"; then
+        echo "Failed to download $blob_url"
+        exit 1
+    fi
+    blob_download_hash=$(sha512sum < "$blob_download_fname" | cut -f 1 -d ' ')
+    if [ "$blob_download_hash" != "$blob_hash" ]; then
+        echo "Failed to verify integrity of $blob_url"
+        exit 1
+    fi
+    mkdir -p "$cache_dir"
+    mv --no-clobber "$blob_download_fname" "$cache_dir/blob.$blob_hash"
+}
+
+# Download and verify integrity of ubuntu-device-flash
+
+if [ -n "$udf_url" ]; then
+    download "$udf_url" "$udf_hash" "Downloading ubuntu-device-flash..."
+    udf="$cache_dir/blob.$udf_hash"
+    chmod +x "$udf"
+fi
+
+# Download snaps that are not published in the store
+
+if [ -n "$os_url" ]; then
+    download "$os_url" "$os_hash" "Downloading OS snap..."
+    os="$cache_dir/blob.$os_hash"
+fi
+if [ -n "$kernel_url" ]; then
+    download "$kernel_url" "$kernel_hash" "Downloading kernel snap..."
+    kernel="$cache_dir/blob.$kernel_hash"
+fi
+if [ -n "$gadget_url" ]; then
+    download "$gadget_url" "$gadget_hash" "Downloading gadget snap..."
+    gadget="$cache_dir/blob.$gadget_hash"
+fi
+
+test -z "$os" && echo "BUG: no OS snap for device: $device" && exit 2
+test -z "$kernel" && echo "BUG: no kernel snap for device: $device" && exit 2
+test -z "$gadget" && echo "BUG: no gadget snap for device: $device" && exit 2
+
+# Check if required tools are present
+
+test -z $(which kpartx) && (
+echo "Installing required dependency: kpartx"
+sudo apt-get install kpartx --yes
+)
+
+# Run ubuntu device flash
+
+echo "Building image..."
+
+case "$image_kind" in
+    vanilla)
+        exec sudo "$udf" core 16 \
+            --channel "$channel" --kernel "$kernel" --os "$os" --gadget "$gadget" \
+            -o "$device.img"
+        ;;
+    devel)
+        exec sudo "$udf" core 16 \
+            --channel "$channel" --kernel "$kernel" --os "$os" --gadget "$gadget" \
+            --developer-mode -o "${device}-devel.img"
+        ;;
+    *)
+        echo "BUG: no information how to build image kind: $image_kind" && exit 2
+        ;;
+esac
