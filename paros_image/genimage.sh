@@ -38,20 +38,20 @@ sudo losetup -o $((512*${writable_offset})) $writable_dev pi2-devel.img
 
 mkdir -p rpi2_system_boot
 mkdir -p rpi2_writable
-mkdir -p system_boot
+mkdir -p system-boot
 mkdir -p writable
 
 sudo mount $system_boot_dev rpi2_system_boot
 sudo mount $writable_dev rpi2_writable
 
-sudo cp -a $DRAGONFLY_PATH/out/dragonfly-x1/final/boot/. system_boot/
+sudo cp -a $DRAGONFLY_PATH/out/dragonfly-x1/final/boot/. system-boot/
 sudo cp -ra rpi2_writable/system-data writable/
 
 echo "Preparing Snappy initrd..."
 
-mkdir -p /tmp/init
-cp rpi2_system_boot/canonical-pi2-linux*.snap/initrd.img /tmp/init/
-cd /tmp/init
+tempinit=$(mktemp -d)
+cp rpi2_system_boot/canonical-pi2-linux*.snap/initrd.img $tempinit
+cd $tempinit
 lzcat initrd.img | cpio -idv
 rm initrd.img
 mkdir -p lib/firmware
@@ -62,25 +62,24 @@ cp -r $DRAGONFLY_PATH/out/dragonfly-x1/final/lib/firmware/bcm43602 ./lib/firmwar
 find . ! -name . | cpio -o -H newc -v > ../initrd.img
 lzma ../initrd.img
 cd -
-sudo cp /tmp/initrd.img.lzma system_boot/initrd.img
-rm -rf /tmp/init
-rm /tmp/initrd.img.lzma
+sudo cp $tempinit/../initrd.img.lzma system-boot/initrd.img
+rm $tempinit/../initrd.img.lzma
+rm -rf $tempinit
 
 echo "Copying Paros kernel..."
 
-sudo cp $DRAGONFLY_PATH/out/dragonfly-x1/final/boot/Image system_boot/
+sudo cp $DRAGONFLY_PATH/out/dragonfly-x1/final/boot/Image system-boot/
 
 echo "Updating uboot config"
 
 kernel_snap=$(basename $(ls rpi2_writable/system-data/var/lib/snapd/snaps/canonical-pi2-linux*.snap))
 os_snap=$(basename $(ls rpi2_writable/system-data/var/lib/snapd/snaps/ubuntu-core*.snap))
 
-sudo sed -i -e 's@/boot/@/@g' system_boot/extlinux/extlinux.conf
-sudo sed -i -e 's@/boot@/@g' system_boot/extlinux/extlinux.conf
-sudo sed -i -e 's@mmcblk0p1@disk/by-label/writable@g' system_boot/extlinux/extlinux.conf 
-sudo sed -i -e "s@APPEND \(.*\)$$@APPEND \1 init=/lib/systemd/systemd snappy_os=$os_snap snappy_kernel=$kernel_snap@g" system_boot/extlinux/extlinux.conf
-sudo sed -i -e 's@INITRD.*@INITRD /initrd.img@g' system_boot/extlinux/extlinux.conf
-
+sudo sed -i -e 's@/boot/@/@g' system-boot/extlinux/extlinux.conf
+sudo sed -i -e 's@/boot@/@g' system-boot/extlinux/extlinux.conf
+sudo sed -i -e 's@mmcblk0p1@disk/by-label/writable@g' system-boot/extlinux/extlinux.conf 
+sudo sed -i -e "s@APPEND \(.*\)@APPEND \1 init=/lib/systemd/systemd snappy_os=$os_snap snappy_kernel=$kernel_snap@g" system-boot/extlinux/extlinux.conf
+sudo sed -i -e 's@INITRD.*@INITRD /initrd.img@g' system-boot/extlinux/extlinux.conf
 echo "Generating uboot.env"
 
 cd $UBOOT_PATH
@@ -92,12 +91,12 @@ make
 cd tools
 
 ./mkenvimage -s 2600 -o uboot.env $CWD/uboot.txt
-sudo cp uboot.env $CWD/system_boot/
+sudo cp uboot.env $CWD/system-boot/
 cd $CWD
 
 echo "Building final image.tar archive"
 
-sudo cp -r system_boot writable/
+sudo cp -r system-boot writable/
 sudo tar -C writable -cf image.tar .
 sudo chown $USER:$USER image.tar
 
@@ -106,7 +105,7 @@ sudo umount rpi2_writable
 sudo umount rpi2_system_boot
 sudo losetup -d  $system_boot_dev
 sudo losetup -d  $writable_dev
-sudo rm -rf system_boot
+sudo rm -rf system-boot
 sudo rm -rf writable
 rmdir rpi2_writable
 rmdir rpi2_system_boot
