@@ -54,11 +54,11 @@ cp rpi2_system_boot/canonical-pi2-linux*.snap/initrd.img $tempinit
 cd $tempinit
 lzcat initrd.img | cpio -idv
 rm initrd.img
+rm -rf lib/firmware
 mkdir -p lib/firmware
-cp $DRAGONFLY_PATH/out/dragonfly-x1/final/lib/firmware/ ./lib/firmware/
+cp -r $DRAGONFLY_PATH/out/dragonfly-x1/final/lib/firmware ./lib/
 rm -rf lib/modules
 cp -r $DRAGONFLY_PATH/out/dragonfly-x1/final/lib/modules ./lib/
-cp -r $DRAGONFLY_PATH/out/dragonfly-x1/final/lib/firmware/bcm43602 ./lib/firmware/
 find . ! -name . | cpio -o -H newc -v > ../initrd.img
 lzma ../initrd.img
 cd -
@@ -70,10 +70,24 @@ echo "Copying Paros kernel..."
 
 sudo cp $DRAGONFLY_PATH/out/dragonfly-x1/final/boot/Image system-boot/
 
-echo "Updating uboot config"
+echo "Removing RPI2 kernel modules and putting in Paros kernel modules"
 
 kernel_snap=$(basename $(ls rpi2_writable/system-data/var/lib/snapd/snaps/canonical-pi2-linux*.snap))
 os_snap=$(basename $(ls rpi2_writable/system-data/var/lib/snapd/snaps/ubuntu-core*.snap))
+
+tempdir=$(mktemp -d)
+sudo cp rpi2_writable/system-data/var/lib/snapd/snaps/$kernel_snap $tempdir/
+cd $tempdir
+sudo unsquashfs $kernel_snap
+sudo rm -rf squashfs-root/lib/modules
+sudo cp -r $DRAGONFLY_PATH/out/dragonfly-x1/final/lib/modules squashfs-root/lib/
+sudo rm -f $kernel_snap
+sudo mksquashfs squashfs-root $kernel_snap -comp xz
+sudo cp $kernel_snap $CWD/writable/system-data/var/lib/snapd/snaps/
+cd -
+sudo rm -rf $tempdir
+
+echo "Updating uboot config"
 
 sudo sed -i -e 's@/boot/@/@g' system-boot/extlinux/extlinux.conf
 sudo sed -i -e 's@/boot@/@g' system-boot/extlinux/extlinux.conf
