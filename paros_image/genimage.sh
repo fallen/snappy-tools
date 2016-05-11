@@ -11,7 +11,7 @@ CWD=$PWD
 
 udf_hash=$(sha512sum ./ubuntu-device-flash | cut -d' ' -f1)
 mkdir -p $HOME/.cache/ubuntu-image
-cp ubuntu-device-flash $HOME/.cache/blob.$udf_hash
+cp ubuntu-device-flash $HOME/.cache/ubuntu-image/blob.$udf_hash
 
 echo "let's build normal dragonfly Paros firmware"
 DRAGONFLY_PATH=$1
