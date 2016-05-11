@@ -39,7 +39,7 @@ dpkg -x $CWD/parrot-tools-bootloaders-nvidia_5.11.6_all.deb $DRAGONFLY_PATH/buil
 
 tempdir=$(mktemp -d)
 
-if [ ! -f http://canari/debian/binary-i386/parrot-tools-installer-nvidia_5.11.7_all.deb ]
+if [ ! -f parrot-tools-installer-nvidia_5.11.7_all.deb ]
 then
 	wget http://canari/debian/binary-i386/parrot-tools-installer-nvidia_5.11.7_all.deb
 fi
