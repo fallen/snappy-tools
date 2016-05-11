@@ -39,10 +39,13 @@ dpkg -x $CWD/parrot-tools-bootloaders-nvidia_5.11.6_all.deb $DRAGONFLY_PATH/buil
 
 tempdir=$(mktemp -d)
 
-wget http://canari/debian/binary-i386/parrot-tools-installer-nvidia_5.11.7_all.deb
+if [ ! -f http://canari/debian/binary-i386/parrot-tools-installer-nvidia_5.11.7_all.deb ]
+then
+	wget http://canari/debian/binary-i386/parrot-tools-installer-nvidia_5.11.7_all.deb
+fi
 dpkg -x parrot-tools-installer-nvidia_5.11.7_all.deb $tempdir
 cp $tempdir/usr/local/share/pinst/paros/linux.dtb $DRAGONFLY_PATH/build/pinst/5.11.8/usr/local/share/pinst/paros/
-rm -rf $tempdir parrot-tools-installer-nvidia_5.11.7_all.deb
+rm -rf $tempdir
 
 cp $IMAGE $DRAGONFLY_PATH/out/dragonfly-x1/dragonfly-x1.tar
 export PINST_TMPL=$DRAGONFLY_PATH/build/pinstrc
