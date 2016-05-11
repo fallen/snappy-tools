@@ -19,7 +19,7 @@ UBOOT_PATH=$2
 if [ "$NOBUILD" != "1" ]
 then
 	cd $DRAGONFLY_PATH
-	./build.sh -p x1 -t all -j6
+	./build.sh -p x1 -A linux -j6
 	cd -
 fi
 echo "let's download RPI2 ubuntu-core image"
@@ -31,9 +31,9 @@ echo $system_boot_offset
 writable_offset=$(echo -e "p\nq\n" | sudo fdisk pi2-devel.img | grep img2 | awk '{print $2;}')
 echo $writable_offset
 
-system_boot_dev=$(losetup -f)
+system_boot_dev=$(/sbin/losetup -f)
 sudo losetup -o $((512*${system_boot_offset})) $system_boot_dev pi2-devel.img
-writable_dev=$(losetup -f)
+writable_dev=$(/sbin/losetup -f)
 sudo losetup -o $((512*${writable_offset})) $writable_dev pi2-devel.img
 
 mkdir -p rpi2_system_boot
