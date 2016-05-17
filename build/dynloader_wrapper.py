@@ -31,9 +31,10 @@ for root, dirs, files in os.walk(installdir):
                             target_path = wrapped_path.replace(installdir, '')
                             filed = open(filepath, 'w+')
                             filed.write("""#!/bin/sh
-    export ROOTFS_RO=$SNAP
-    export ROOTFS_RW=$SNAP_DATA
-    exec \"$SNAP/""" + dynamic_linker_path.decode('ascii') + '\" \"$SNAP/' + target_path + '\" \"$@\"\n')
+export ROOTFS_RO=$SNAP
+export ROOTFS_RW=$SNAP_DATA
+export LD_LIBRARY_PATH=$SNAP/usr/lib:$SNAP/lib:$LD_LIBRARY_PATH
+exec \"$SNAP/""" + dynamic_linker_path.decode('ascii') + '\" \"$SNAP/' + target_path + '\" \"$@\"\n')
                             filed.close()
                             st = os.stat(filepath)
                             os.chmod(filepath, st.st_mode | stat.S_IXUSR | stat.S_IXGRP | stat.S_IXOTH)
