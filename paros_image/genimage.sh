@@ -19,7 +19,7 @@ UBOOT_PATH=$2
 if [ "$NOBUILD" != "1" ]
 then
 	cd $DRAGONFLY_PATH
-	./build.sh -p x1 -A linux -j6
+	./build.sh -p x1 -A linux final -j6
 	cd -
 fi
 echo "let's download RPI2 ubuntu-core image"
@@ -57,7 +57,7 @@ rm initrd.img
 rm -rf lib/firmware
 mkdir -p lib/firmware
 cp -r $DRAGONFLY_PATH/out/dragonfly-x1/final/lib/firmware ./lib/
-rm -rf lib/modules
+rm -rf lib/modules modules
 cp -r $DRAGONFLY_PATH/out/dragonfly-x1/final/lib/modules ./lib/
 find . ! -name . | cpio -o -H newc -v > ../initrd.img
 lzma ../initrd.img
@@ -79,8 +79,8 @@ tempdir=$(mktemp -d)
 sudo cp rpi2_writable/system-data/var/lib/snapd/snaps/$kernel_snap $tempdir/
 cd $tempdir
 sudo unsquashfs $kernel_snap
-sudo rm -rf squashfs-root/lib/modules
-sudo cp -r $DRAGONFLY_PATH/out/dragonfly-x1/final/lib/modules squashfs-root/lib/
+sudo rm -rf squashfs-root/lib/modules squashfs-root/modules
+sudo cp -r $DRAGONFLY_PATH/out/dragonfly-x1/final/lib/modules squashfs-root/
 sudo rm -f $kernel_snap
 sudo mksquashfs squashfs-root $kernel_snap -comp xz
 sudo cp $kernel_snap $CWD/writable/system-data/var/lib/snapd/snaps/
