@@ -26,7 +26,7 @@ then
 	mkdir -p $DRAGONFLY_PATH/build/pinst/5.11.8
 	dpkg -x $CWD/parrot-tools-installer-nvidia_5.11.8_all.deb $DRAGONFLY_PATH/build/pinst/5.11.8
 else
-	echo "error: you need to download parrot-tools-installer-nvidia-flashtools_5.11.8_all.deb"
+	echo "error: you need to download parrot-tools-installer-nvidia_5.11.8_all.deb"
 	exit 1
 fi
 
