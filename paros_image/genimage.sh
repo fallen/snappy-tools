@@ -93,6 +93,7 @@ sudo sed -i -e 's@/boot/@/@g' system-boot/extlinux/extlinux.conf
 sudo sed -i -e 's@/boot@/@g' system-boot/extlinux/extlinux.conf
 sudo sed -i -e 's@mmcblk0p1@disk/by-label/writable@g' system-boot/extlinux/extlinux.conf 
 sudo sed -i -e "s@APPEND \(.*\)@APPEND \1 init=/lib/systemd/systemd snappy_os=$os_snap snappy_kernel=$kernel_snap@g" system-boot/extlinux/extlinux.conf
+sudo sed -i -e "s@APPEND \(.*\)@APPEND \1\n\tINITRD /$kernel_snap/initrd.img@" system-boot/extlinux/extlinux.conf
 sudo sed -i -e 's@INITRD.*@INITRD /initrd.img@g' system-boot/extlinux/extlinux.conf
 echo "Generating uboot.env"
 
