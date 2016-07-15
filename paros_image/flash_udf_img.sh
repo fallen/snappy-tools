@@ -61,16 +61,18 @@ kernel_snap=$(basename $(ls writable/system-data/var/lib/snapd/snaps/paros-kerne
 os_snap=$(basename $(ls writable/system-data/var/lib/snapd/snaps/ubuntu-core*.snap))
 
 sudo mkdir -p system-boot/extlinux
-sudo cp $DRAGONFLY_PATH/products/dragonfly/$PRODUCT/skel/boot/extlinux/extlinux.conf system-boot/extlinux/
+# FIXME: product x1 is hardcoded because x1_snappy inheritates from it and has therefore no skel
+sudo cp $DRAGONFLY_PATH/products/dragonfly/x1/skel/boot/extlinux/extlinux.conf system-boot/extlinux/
 sudo sed -i -e 's@/boot/@/@g' system-boot/extlinux/extlinux.conf
 sudo sed -i -e 's@/boot@/@g' system-boot/extlinux/extlinux.conf
 sudo sed -i -e "s@LINUX.*@LINUX /$kernel_snap/vmlinuz@g" system-boot/extlinux/extlinux.conf
-sudo sed -i -e 's@mmcblk0p1@disk/by-label/writable@g' system-boot/extlinux/extlinux.conf 
-sudo sed -i -e "s@APPEND \(.*\)@APPEND \1 init=/lib/systemd/systemd snappy_os=$os_snap snappy_kernel=$kernel_snap@g" system-boot/extlinux/extlinux.conf
+sudo sed -i -e 's@root=[^ ]*@root=/dev/disk/by-label/writable@g' system-boot/extlinux/extlinux.conf 
+sudo sed -i -e "s@APPEND \(.*\)@APPEND \1 init=/lib/systemd/systemd snappy_os=$os_snap snappy_kernel=$kernel_snap net.ifnames=0@g" system-boot/extlinux/extlinux.conf
 sudo sed -i -e "s@APPEND \(.*\)@APPEND \1\n\tINITRD /$kernel_snap/initrd.img@" system-boot/extlinux/extlinux.conf
 
 sudo cp -ra writable/system-data final_image
 sudo cp -r system-boot final_image/
+./ptmx_hack.sh ./final_image/
 sudo tar -C final_image -cf image.tar .
 sudo chown $USER:$USER image.tar
 
@@ -83,6 +85,7 @@ rmdir writable
 rmdir system-boot
 
 cp image.tar $DRAGONFLY_PATH/out/dragonfly-$PRODUCT/dragonfly-$PRODUCT.tar
+cp $HOME/dev/utils/packages2/parrot_bootloaders/host/parrotboot/bin/paros/* $DRAGONFLY_PATH/build/pinst/5.11.12/usr/local/share/pinst/paros/
 export PINST_TMPL=$DRAGONFLY_PATH/build/pinstrc
 $DRAGONFLY_PATH/build/pinst/5.11.12/usr/local/bin/pinst_build paros linux installer_fab $DRAGONFLY_PATH/out/dragonfly-$PRODUCT/dragonfly-$PRODUCT.tar
 $DRAGONFLY_PATH/build/pinst/5.11.12/usr/local/bin/tegra_flasher paros installer_fab

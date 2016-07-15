@@ -48,6 +48,8 @@ tempdir=$(mktemp -d)
 #cp $tempdir/usr/local/share/pinst/paros/linux.dtb $DRAGONFLY_PATH/build/pinst/5.11.11/usr/local/share/pinst/paros/
 #rm -rf $tempdir
 
+cp $HOME/dev/utils/packages2/parrot_bootloaders/host/parrotboot/bin/paros/* $DRAGONFLY_PATH/build/pinst/5.11.12/usr/local/share/pinst/paros/
+./ptmx_hack.sh $FOLDER
 sudo tar -C $FOLDER -cf image.tar .
 sudo chown $USER:$USER image.tar
 
