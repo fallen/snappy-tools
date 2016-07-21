@@ -72,6 +72,7 @@ sudo sed -i -e "s@APPEND \(.*\)@APPEND \1\n\tINITRD /$kernel_snap/initrd.img@" s
 
 sudo cp -ra writable/system-data final_image
 sudo cp -r system-boot final_image/
+sudo mkdir -p final_image/data
 ./ptmx_hack.sh ./final_image/
 sudo tar -C final_image -cf image.tar .
 sudo chown $USER:$USER image.tar
